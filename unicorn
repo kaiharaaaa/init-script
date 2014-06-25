@@ -1,0 +1,91 @@
+#!/bin/sh
+
+# chkconfig:   345 10 10
+# Description: start unicorn
+
+# set app name
+NAME=""
+
+# tweak yourself
+export HOME="/root"
+BUNDLE_PATH="/root/.rbenv/shims/bundle"
+APP_DIR="/service/${NAME}"
+PID="/tmp/${NAME}.pid"
+CONFIG="${APP_DIR}/config/unicorn.rb"
+
+ENV="production"
+CMD="${BUNDLE_PATH} exec unicorn -c ${CONFIG} -E ${ENV} -D"
+
+start()
+{
+  if [ -e $PID ]; then
+    echo "${NAME} already started"
+    exit 1
+  fi
+  echo "start ${NAME}"
+  cd $APP_DIR
+  $CMD
+}
+
+stop()
+{
+  if [ ! -e $PID ]; then
+    echo "${NAME} not started"
+    exit 1
+  fi
+  echo "stop ${NAME}"
+  kill -QUIT `cat ${PID}`
+}
+
+force_stop()
+{
+  if [ ! -e $PID ]; then
+    echo "${NAME} not started"
+    exit 1
+  fi
+  echo "force stop ${NAME}"
+  kill -INT `cat ${PID}`
+}
+
+reload()
+{
+  if [ ! -e $PID ]; then
+    echo "${NAME} not started"
+    start
+    exit 0
+  fi
+  echo "reload ${NAME}"
+  kill -HUP `cat ${PID}`
+}
+
+restart()
+{
+  if [ ! -e $PID ]; then
+    echo "${NAME} not started"
+    start
+    exit 0
+  fi
+  echo "restart ${NAME}"
+  kill -USR2 `cat ${PID}`
+}
+
+case $1 in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  force-stop)
+    force_stop
+    ;;
+  reload)
+    reload
+    ;;
+  restart)
+    restart
+    ;;
+  *)
+    echo "Usage: [start|stop|force-stop|reload|restart]"
+    ;;
+esac
